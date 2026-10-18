@@ -1,6 +1,6 @@
 # Kalshi Backtest on Real Hourly Prices
 
-A small, honest backtest for Kalshi. It pulls real hourly price history through the [Predictefy API](https://predictefy.com/en/api?utm_source=youtube&utm_medium=video&utm_campaign=kalshi-backtest&utm_content=github), replays a simple strategy over it with the backtester that ships in Predictefy's Python package, settles what is left at the real result, and shows everything on a local results page: the account value over time, every order, the fees, and where the data is thin.
+A small, honest backtest for Kalshi. It pulls real hourly price history through the [Predictefy API](https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=github), replays a simple strategy over it with the backtester that ships in Predictefy's Python package, settles what is left at the real result, and shows everything on a local results page: the account value over time, every order, the fees, and where the data is thin.
 
 It runs on your own computer. It never places an order and never asks for a Kalshi login.
 
