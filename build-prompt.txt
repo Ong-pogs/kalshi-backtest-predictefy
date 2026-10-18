@@ -1,0 +1,45 @@
+Build me a local backtest for Kalshi that uses the Predictefy API for price history and the backtester that ships in Predictefy's Python package. It pulls real hourly candles, replays a simple strategy over them, settles at the real result and shows everything on a local results page. It must never place an order and never ask for a Kalshi login.
+
+STACK
+- Python 3.10 or newer. One dependency, pinned: predictefy==1.0.0b9 (it brings httpx). Everything else is the standard library, including the web server and the tests (unittest).
+- Files: kalshi_backtest/config.py, data.py (pure candle checks), fetch.py, strategies.py, run.py, server.py, peek.py, web/index.html (a one-file results page), plus four two-line launchers in the root: fetch.py, backtest.py, serve.py, peek.py. Also tests/, requirements.txt, .env.example, README.md.
+- Read PREDICTEFY_API_KEY from the process environment or a local .env file. Treat the placeholder pk_live_your_key_here as "not set" and exit with a clear message that links https://portal.predictefy.com/keys. Never print the key, never send it to the browser.
+- Bind the web server to 127.0.0.1 only. Default port 8816, overridable with BACKTEST_PORT or --port.
+
+DATA (Predictefy Python SDK: from predictefy import Predictefy; client = Predictefy(api_key=...))
+- Contracts: client.kalshi.fetch_markets({"eventId": EVENT, "status": "all", "limit": 50}) for the events KXFED-26JUL and KXFED-26SEP (the Fed's rate after its July and September 2026 meetings; 11 "above X%" contracts each). Use the YES outcome's outcomeId. 1 credit per call.
+- Candles: client.kalshi.fetch_ohlcv({"outcomeId": ..., "resolution": "1h", "limit": 5000, "start": ISO, "end": ISO}). 5 credits per call, up to 5,000 candles; if exactly 5,000 come back, ask again from just after the last timestamp. Every candle has timestamp (the hour's open, epoch ms), open, high, low, close, volume, source, sourceType, quality, isTrueCandle. The response's meta.provenance may be absent.
+- Options: default window is the last 12 months (what the Builder plan can read); --all sends no start or end; --free reads the last 7 days of the open event KXFED-26OCT into data-free/.
+- Retry a retryable error (the history store sometimes answers 503 HISTORY_UNAVAILABLE) up to three times with a growing wait. On 402 or 403 PLAN_REQUIRED, stop and print: the free plan reads 7 days of history, Builder 12 months, Pro all of it; the upgrade link https://predictefy.com/en/api?utm_source=youtube&utm_medium=video&utm_campaign=kalshi-backtest&utm_content=upgrade; and the --free command. Write data/plan-required.json so the results page can show the same message.
+- Count credits from the x-credits-charged response header by passing the SDK a custom httpx transport (transport=...), and save every call in data/manifest.json.
+- Settlement results are NOT in the candles: Kalshi stops trading before the Fed announces. Read each contract's result ("yes" or "no"), open_time, close_time, expiration_value and volume_fp from Kalshi's public market record, no key needed: GET https://api.elections.kalshi.com/trade-api/v2/markets?tickers=A,B,C and, for older markets, /trade-api/v2/historical/markets?tickers=A,B,C.
+
+CANDLE CHECKS (pure functions, tested)
+- Drop a candle when quality is "suspect", when sourceType is "book-derived", when volume is null or zero, or when any of open/high/low/close is not strictly between 0 and 1. Count every drop by reason. Important: an hour with no trades can come back priced at 0 with volume 0 and still be labelled official, true-candle, ok.
+- Count the values of source, sourceType, quality and isTrueCandle. Measure coverage: hours between listing and close, hours that have a candle, the longest silent stretch, and candles per calendar month.
+- Save the kept candles as NDJSON, one file per contract, in the row shape predictefy.backtest reads: {"k":"candle","ts":...,"resolution":"1h","open":...,"high":...,"low":...,"close":...,"volume":...,"source":...,"sourceType":...,"quality":...,"isTrueCandle":...}. Keep the raw responses too.
+
+BACKTEST (from predictefy.backtest import Backtest, NdjsonFileFeed, Strategy)
+- One run per contract and strategy: Backtest(NdjsonFileFeed(path), strategy, venue="kalshi", initial_cash=100).run(). venue="kalshi" selects Kalshi's taker fee. Keep the default Fill Model v1 settings. Reads no network.
+- Strategy 1, "Buy the dip": on each candle, if an order is working, cancel it when the close has moved away from its signal (above 40 cents for a buy, below 60 for a sell) and otherwise leave it. With no order working: if nothing is held and close <= 0.40, ctx.buy(size=100, price=close); if something is held and close >= 0.60, ctx.sell(size=ctx.position, price=close). Treat a position under 0.01 contracts as nothing.
+- Strategy 2, "Back the favourite": the first time the close is >= 0.85 with nothing held, buy 100 at the close and never sell. Cancel an unfilled order if the close falls back under 0.85.
+- The engine stops at the last candle. Settle what is still held yourself: $1 a contract if the result is "yes", $0 if "no", no fee. If a contract has no result yet, value it at the last close and label it "last-price".
+- Per contract keep: orders (side, limit, size, filled, status, time placed), fills (time, side, price, size, fee, fill rule), contracts bought and sold with average prices, fees, final cash and profit or loss. Per strategy: start and final cash, profit before and after fees, traded dollars, orders filled in full, in part and never, contracts asked for against contracts bought, deepest drop of the combined account, and the list from report()["assumptions"].
+- Combined account value over time: every account holds its last value until its next candle and steps to its settled cash when its market closes; add them up.
+- Write results/results.json and one CSV of fills per strategy.
+
+RESULTS PAGE (dark theme, large type, readable on a screen recording at 1920x985, no scrolling inside a tab)
+- Header with the name, the line "A simple strategy replayed on real hourly prices. A test of the past, not a forecast.", and pills naming the data source (Predictefy fetchOHLCV, with the pull date) and the engine (predictefy.backtest, Fill Model v1). A switch between the two strategies with the rule written out.
+- Tabs: Result, Trades, The data, What it assumes, What it costs.
+- Result: ended with / before fees / fees paid / contracts bought of contracts asked / deepest drop; a step line of the combined account value with the starting cash as a baseline and each settlement date marked; a diverging bar per contract for its profit or loss. Under every chart, name the endpoint each number came from.
+- Trades: the contract ladder with each result and profit or loss; for the selected contract its hourly closes, the rule's price lines, buy and sell markers, the settlement value, and a table of its orders saying filled in full, filled in part or never filled.
+- The data: candle count, span, share of hours that have a candle, candle volume against Kalshi's lifetime volume; a strip per contract with a tick for every candle and a column per month; the four labels with counts and one raw candle; and, if data-free/ exists, what the same request returned for the open contracts, including how many candles were priced at zero.
+- What it assumes: no queue position, no price improvement, no market impact, no latency, each in one plain sentence; what those rules did to this run (orders in full, in part, never; contracts bought of asked); the engine's own assumptions list word for word; and what this project adds.
+- What it costs: calls and credits for the pull, zero for a re-run, the three plans with their history windows and how many of these candles each could read, drawn against the candles per month, and a button to the upgrade link.
+- Escape every string that comes from an API. If results are missing, say which commands to run; if the plan was refused, show the upgrade message.
+- End with: "A backtest replays the past under stated assumptions. It is not advice and it does not predict what happens next."
+
+ALSO
+- peek.py prints one raw candle and the label counts for a settled contract, or with --open the last 7 days of an open one, including one zero-priced candle.
+- Unit tests: the candle checks (including the zero-priced candle labelled ok), coverage and gaps, the replay row parses in predictefy.backtest, both rules on synthetic candles, an order never fills on the candle that caused it, a thin candle fills only part of an order, Kalshi's fee for 100 contracts at 45 cents is $1.74, settlement for yes, no and unsettled, the combined curve, paging past 5,000 candles, and the plan-required message.
+- README with quick start, which plan is needed, what it costs to run, the two rules, the assumptions and a plain list of what the backtest cannot tell you.

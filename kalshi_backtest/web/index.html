@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalshi Backtest</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='6' fill='%230d0d0d' stroke='%23c41e3a' stroke-width='3'/%3E%3Cpath d='M8 21l5-6 4 3 7-9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme:dark;
+  --plane:#0d0d0d;--surface:#1a1a19;--surface-2:#232321;--ink:#fff;--ink-2:#c3c2b7;--muted:#898781;
+  --grid:#2c2c2a;--axis:#383835;--hair:rgba(255,255,255,.10);--quiet:#56554f;
+  --brand:#c41e3a;--brand-2:#e2485f;
+  --gain:#3987e5;--gain-dim:#184f95;--loss:#d95926;--loss-dim:#6e2e14;
+  --good:#0ca30c;--warn:#fab219;
+  --sans:Bahnschrift,"DIN Alternate","Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--plane);color:var(--ink);font:17px/1.42 var(--sans)}
+body{background:radial-gradient(1300px 460px at 14% -10%,rgba(196,30,58,.20),transparent 70%),repeating-linear-gradient(0deg,transparent 0 59px,rgba(255,255,255,.022) 59px 60px),var(--plane)}
+button{font:inherit;color:inherit}
+a{color:inherit}
+.label{font-size:13px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);font-stretch:85%;font-weight:500}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-size:14px;letter-spacing:-.2px}
+.src{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:-.2px;margin-top:8px}
+.src b{color:var(--ink-2);font-weight:400}
+.dim{color:var(--muted)}.ink2{color:var(--ink-2)}
+
+header{display:flex;align-items:center;gap:16px;padding:16px 36px 14px;border-bottom:1px solid var(--hair);position:relative}
+header::after{content:"";position:absolute;left:36px;bottom:-1px;width:214px;height:2px;background:var(--brand)}
+.mark{width:42px;height:42px;border-radius:11px;border:3px solid var(--brand);display:grid;place-items:center}
+h1{margin:0;font-size:27px;font-weight:600;letter-spacing:.2px;line-height:1.1}
+.tag{color:var(--ink-2);font-size:15px}
+.grow{flex:1}
+.pill{display:inline-flex;align-items:center;gap:9px;padding:7px 15px;border:1px solid var(--hair);border-radius:999px;background:var(--surface);font-size:15px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--brand-2);display:inline-block}
+
+.bar{display:flex;align-items:center;gap:20px;padding:12px 36px 0}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:4px}
+.seg button{border:0;background:none;padding:8px 20px;border-radius:9px;cursor:pointer;color:var(--ink-2);font-size:17px}
+.seg button.on{background:var(--brand);color:#fff;font-weight:600}
+.rule{font-size:19px;color:var(--ink)}
+.rule .label{margin-right:10px}
+
+nav{display:flex;gap:4px;padding:8px 36px 0;border-bottom:1px solid var(--hair)}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:9px 18px 11px;color:var(--muted);cursor:pointer;font-size:17px;letter-spacing:.2px}
+nav button:hover{color:var(--ink-2)}
+nav button.on{color:var(--ink);border-color:var(--brand);font-weight:600}
+main{padding:14px 36px 10px}
+section{display:none}
+section.on{display:block;animation:rise .35s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.tiles{display:grid;gap:14px}
+.tile{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:14px 20px;min-width:0}
+.hero{border-left:3px solid var(--brand)}
+.hero b{display:block;font-size:60px;line-height:1;font-weight:600;margin:4px 0 4px}
+.hero small{color:var(--ink-2);font-size:15.5px}
+.stat b{display:block;font-size:34px;font-weight:600;margin-top:8px;line-height:1}
+.stat small{display:block;color:var(--ink-2);font-size:14.5px;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:16px 20px;min-width:0}
+.card h2{margin:0;font-size:20px;font-weight:600}
+.card .sub{color:var(--ink-2);font-size:15px;margin-top:3px}
+.two{display:grid;gap:14px;margin-top:14px}
+svg{display:block;width:100%}
+svg text{font-family:var(--sans);fill:var(--muted);font-size:13.5px}
+svg text.val{fill:var(--ink);font-size:15px;font-weight:600}
+svg text.note{fill:var(--ink-2);font-size:14px}
+.key{display:inline-flex;align-items:center;gap:7px;color:var(--ink-2);font-size:14px;margin-right:16px}
+.key i{display:inline-block}
+.tip{position:fixed;pointer-events:none;background:#000;border:1px solid var(--axis);border-radius:9px;padding:8px 12px;font-size:14.5px;z-index:20;display:none;max-width:340px;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+.tip b{display:block;font-size:17px}
+.tip span{color:var(--ink-2)}
+
+/* contract list */
+.group{margin:0 0 4px;padding:4px 10px;color:var(--ink-2);font-size:14.5px;border-bottom:1px solid var(--hair)}
+.group b{color:var(--ink)}
+.crow{display:grid;grid-template-columns:128px 58px 1fr 92px;align-items:center;gap:10px;padding:1px 10px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1.36;border:1px solid transparent}
+.crow:hover{background:#ffffff08}
+.crow.on{background:rgba(196,30,58,.16);border-color:var(--brand)}
+.crow .what{color:var(--ink-2);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .pnl{text-align:right;font-weight:600}
+.badge{display:inline-block;padding:1px 0;width:46px;text-align:center;border-radius:5px;font-size:12px;font-weight:600;letter-spacing:.9px;border:1px solid var(--axis);color:var(--ink-2);font-stretch:85%}
+.badge.yes{border-color:var(--gain);color:var(--ink)}
+.badge.no{border-color:var(--quiet)}
+.cells{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:12px}
+.cell{background:var(--surface-2);border-radius:10px;padding:9px 14px}
+.cell b{display:block;font-size:23px;font-weight:600;line-height:1.15;margin-top:2px}
+.cell small{color:var(--ink-2);font-size:13.5px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 10px 6px}
+td{padding:6px 10px;border-top:1px solid var(--hair);font-size:15.5px}
+td.r,th.r{text-align:right}
+.scroll{overflow:auto;border-top:1px solid var(--hair);margin-top:10px}
+.state{display:inline-flex;align-items:center;gap:7px}
+.state i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* data */
+.labels .lrow{display:grid;grid-template-columns:128px 1fr 150px;gap:12px;align-items:center;margin-top:6px;font-size:15.5px}
+.track{height:12px;border-radius:6px;background:var(--grid);overflow:hidden;display:flex;gap:2px}
+.track i{display:block;height:12px;background:var(--gain)}
+.track i.off{background:var(--quiet)}.track i.derived{background:var(--loss)}
+pre{margin:9px 0 0;padding:8px 14px;background:#000;border:1px solid var(--hair);border-radius:10px;font:13px/1.45 var(--mono);color:var(--ink-2);white-space:pre-wrap}
+pre b{color:#fff;font-weight:400}pre em{color:var(--brand-2);font-style:normal}
+.assume{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.assume .card b{font-size:22px;font-weight:600;display:block}
+.assume .card span{color:var(--ink-2);font-size:15.5px;display:block;margin-top:4px}
+.assume .card{border-left:3px solid var(--brand)}
+ol.list{margin:8px 0 0;padding-left:22px;color:var(--ink-2);font-size:14.5px}
+ol.list li{margin-top:5px}
+.funnel .frow{display:grid;grid-template-columns:180px 1fr 80px;gap:12px;align-items:center;margin-top:10px;font-size:16px}
+.funnel .frow b{text-align:right;font-size:20px}
+.fbar{height:14px;border-radius:0 4px 4px 0;background:var(--gain)}
+.fbar.part{background:var(--gain-dim)}.fbar.none{background:var(--quiet)}
+.plan{display:grid;grid-template-columns:110px 150px 150px 130px 1fr;gap:10px;align-items:center;padding:11px 12px;border-top:1px solid var(--hair);font-size:16.5px}
+.plan.head{border-top:0;padding-bottom:4px}
+.plan b{font-weight:600}
+.plan.you{background:rgba(196,30,58,.12);border-radius:10px;border-top-color:transparent}
+.btn{display:inline-block;margin-top:14px;padding:11px 22px;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;text-decoration:none;font-size:17px}
+.foot{padding:0 36px 10px;color:var(--muted);font-size:13.5px}
+.empty{max-width:880px;margin:70px auto;text-align:center}
+.empty h2{font-size:30px;margin:0 0 10px}
+.empty code{font-family:var(--mono);background:#000;padding:3px 9px;border-radius:6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="mark"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 17l6-7 4 4 8-10" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div><h1>Kalshi Backtest</h1><div class="tag">A simple strategy replayed on real hourly prices. A test of the past, not a forecast.</div></div>
+  <div class="grow"></div>
+  <span class="pill" id="pillData"><i></i><span>Candles: <b>Predictefy</b> fetchOHLCV</span></span>
+  <span class="pill" id="pillEngine"><span>Engine: <b>predictefy.backtest</b> · Fill Model v1</span></span>
+</header>
+<div id="app" hidden>
+<div class="bar">
+  <div class="seg" id="strategies"></div>
+  <div class="rule"><span class="label">The rule</span><span id="rule"></span></div>
+</div>
+<nav id="nav">
+  <button data-tab="result" class="on">Result</button>
+  <button data-tab="trades">Trades</button>
+  <button data-tab="data">The data</button>
+  <button data-tab="assume">What it assumes</button>
+  <button data-tab="cost">What it costs</button>
+</nav>
+<main>
+  <section id="tab-result" class="on">
+    <div class="tiles" style="grid-template-columns:430px repeat(4,1fr)">
+      <div class="tile hero"><span class="label">Ended with</span><b class="num" id="heroValue"></b><small id="heroNote"></small></div>
+      <div class="tile stat" id="tBefore"><span class="label">Before fees</span><b class="num"></b><small></small></div>
+      <div class="tile stat" id="tFees"><span class="label">Fees paid</span><b class="num"></b><small></small></div>
+      <div class="tile stat" id="tBought"><span class="label">Contracts bought</span><b class="num"></b><small></small></div>
+      <div class="tile stat" id="tDrop"><span class="label">Deepest drop</span><b class="num"></b><small></small></div>
+    </div>
+    <div class="two" style="grid-template-columns:1fr 640px">
+      <div class="card"><h2>Account value over time</h2><div class="sub" id="equitySub"></div><div id="equity"></div>
+        <div class="src"><b>prices</b> GET /api/kalshi/fetchOHLCV (1h) · <b>fills and fees</b> predictefy.backtest · <b>settlement</b> Kalshi public market record</div></div>
+      <div class="card"><h2>Profit or loss on each contract</h2><div class="sub" id="barsSub"></div><div id="pnlBars"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-trades">
+    <div class="two" style="grid-template-columns:520px 1fr;margin-top:0">
+      <div class="card" id="contracts"></div>
+      <div class="card">
+        <h2 id="cTitle"></h2><div class="sub" id="cSub"></div>
+        <div class="cells" id="cCells"></div>
+        <div id="priceChart" style="margin-top:8px"></div>
+        <div><span class="key"><i style="width:18px;height:2px;background:var(--ink-2)"></i>hourly close</span><span class="key"><svg width="14" height="12" style="display:inline-block;width:14px"><path d="M7 1l6 10H1z" fill="#3987e5"/></svg>bought</span><span class="key"><svg width="14" height="12" style="display:inline-block;width:14px"><path d="M7 11l6-10H1z" fill="#d95926"/></svg>sold</span><span class="key" id="settleKey"></span></div>
+        <div class="scroll" id="ordersWrap" style="max-height:192px"><table id="ordersTable"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-data">
+    <div class="tiles" style="grid-template-columns:repeat(5,1fr)" id="dataTiles"></div>
+    <div class="two" style="grid-template-columns:1fr 640px">
+      <div class="card"><h2>When these contracts actually traded</h2><div class="sub" id="covSub"></div><div id="coverage"></div>
+        <div class="src"><b>each tick</b> one hourly candle from GET /api/kalshi/fetchOHLCV · <b>an empty stretch</b> hours with no trade, so no candle</div></div>
+      <div>
+        <div class="card labels" id="labels"></div>
+        <div class="card labels" id="liveCheck" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-assume">
+    <div class="two" style="grid-template-columns:1fr 1fr;margin-top:0">
+      <div>
+        <div class="assume" id="assumeCards"></div>
+        <div class="card funnel" id="funnel" style="margin-top:14px"></div>
+      </div>
+      <div class="card"><h2>The engine's own list</h2><div class="sub">Printed by <span class="mono">report()["assumptions"]</span> with every run.</div><ol class="list" id="assumeList"></ol>
+        <h2 style="margin-top:16px">Added in this project</h2><ol class="list" id="addedList"></ol></div>
+    </div>
+  </section>
+
+  <section id="tab-cost">
+    <div class="two" style="grid-template-columns:1fr 1fr;margin-top:0">
+      <div class="card"><h2>What this backtest cost to pull</h2><div class="sub" id="costSub"></div>
+        <table id="costTable" style="margin-top:8px"></table>
+        <div class="src" id="costSrc"></div></div>
+      <div class="card"><h2>Which plan can read this history</h2><div class="sub">History older than a plan's window answers <span class="mono">403 PLAN_REQUIRED</span>.</div>
+        <div id="plans" style="margin-top:8px"></div>
+        <a class="btn" id="upgrade" target="_blank" rel="noopener">See Predictefy plans</a>
+        <div class="src"><b>plans</b> predictefy.com/en/pricing · docs.predictefy.com/guides/credits</div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h2>How far back each plan reads, against the candles in this backtest</h2><div class="sub" id="windowSub"></div><div id="windows"></div></div>
+  </section>
+</main>
+<div class="foot">A backtest replays the past under stated assumptions. It is not advice and it does not predict what happens next.</div>
+</div>
+<div id="empty" class="empty" hidden></div>
+<div class="tip" id="tip"></div>
+<script>
+'use strict';
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const money = (n, d = 2) => '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const signed = (n, d = 2) => (n > 0 ? '+' : n < 0 ? '−' : '') + money(Math.abs(n), d);
+const count = n => Math.round(n).toLocaleString('en-US');
+const qty = n => n > 0 && n < 10 ? Number(n.toFixed(2)).toLocaleString('en-US') : count(n);
+const cents = p => (p * 100).toFixed(p * 100 % 1 ? 1 : 0) + '¢';
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const day = t => { const d = new Date(t); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const stamp = t => { const d = new Date(t); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; };
+const stampY = t => { const d = new Date(t); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; };
+const tip = $('#tip');
+function showTip(event, html) { tip.innerHTML = html; tip.style.display = 'block'; const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.min(innerWidth - w - 12, event.clientX + 16) + 'px'; tip.style.top = Math.max(8, event.clientY - h - 14) + 'px'; }
+const hideTip = () => { tip.style.display = 'none'; };
+
+let R = null, strategy = null, contract = null;
+const state = {tab: 'result'};
+const strike = m => `Above ${Number(m.strike).toFixed(2)}%`;
+const meeting = event => event.endsWith('JUL') ? 'July' : event.endsWith('SEP') ? 'September' : event.endsWith('OCT') ? 'October' : event;
+const marketOf = ticker => R.markets.find(m => m.ticker === ticker);
+
+function monthTicks(from, to) {
+  const out = [], d = new Date(from); d.setUTCDate(1); d.setUTCHours(0, 0, 0, 0); d.setUTCMonth(d.getUTCMonth() + 1);
+  while (d.getTime() < to) { out.push(d.getTime()); d.setUTCMonth(d.getUTCMonth() + 1); }
+  return out;
+}
+
+// ---- Result ----
+function renderResult() {
+  const s = strategy, d = R.data;
+  $('#heroValue').textContent = money(s.finalCash);
+  $('#heroNote').textContent = `Started with ${money(s.startCash, 0)}. ${signed(s.pnl)} (${s.returnPct > 0 ? '+' : ''}${s.returnPct.toFixed(2)}%) over ${Math.round(d.spanDays)} days.`;
+  const set = (id, value, note) => { $(`#${id} b`).textContent = value; $(`#${id} small`).textContent = note; };
+  set('tBefore', signed(s.pnlBeforeFees), `what the trades made on ${money(s.tradedNotional)} traded`);
+  set('tFees', '−' + money(s.feesPaid), `Kalshi's taker fee on ${count(s.fills)} fills`);
+  set('tBought', count(s.orders.contractsBought), `of ${count(s.orders.contractsAskedToBuy)} the strategy asked for`);
+  set('tDrop', '−' + money(s.maxDrawdown), 'from the highest point, before settlement');
+  $('#equitySub').textContent = `All ${R.data.contracts} contract accounts added together, ${money(R.cashPerContract, 0)} each. Open positions are valued at the last traded price, then settled at the real result.`;
+  drawEquity();
+  $('#barsSub').textContent = `${s.contractsUp} made money (${signed(s.sumUp)}), ${s.contractsDown ? `${s.contractsDown} lost (${signed(s.sumDown)})` : 'none lost'}, ${s.contractsFlat} never traded.`;
+  drawBars();
+}
+
+function drawEquity() {
+  const box = $('#equity'), W = box.clientWidth || 1100, H = 412, L = 74, Rr = 96, T = 50, B = 34;
+  const curve = strategy.curve, t0 = curve[0][0], t1 = curve.at(-1)[0];
+  const values = curve.map(p => p[1]).concat([strategy.startCash]);
+  let lo = Math.min(...values), hi = Math.max(...values); const pad = Math.max(8, (hi - lo) * 0.12); lo -= pad; hi += pad;
+  const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500].find(x => (hi - lo) / x <= 6) || 1000;
+  const x = t => L + (t - t0) / (t1 - t0) * (W - L - Rr), y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  let path = `M${x(t0).toFixed(1)},${y(curve[0][1]).toFixed(1)}`;
+  for (let i = 1; i < curve.length; i++) path += `H${x(curve[i][0]).toFixed(1)}V${y(curve[i][1]).toFixed(1)}`;
+  let g = '';
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}" stroke="#2c2c2a"/><text x="${L - 10}" y="${y(v) + 5}" text-anchor="end" class="num">${esc(money(v, 0))}</text>`;
+  for (const t of monthTicks(t0, t1)) { const d = new Date(t); g += `<line x1="${x(t)}" x2="${x(t)}" y1="${H - B}" y2="${H - B + 5}" stroke="#383835"/><text x="${x(t)}" y="${H - 10}" text-anchor="middle">${MONTHS[d.getUTCMonth()]}${d.getUTCMonth() === 0 ? ' ' + d.getUTCFullYear() : ''}</text>`; }
+  const settles = [...new Set(R.markets.map(m => m.closeTime).filter(Boolean))].map(t => Date.parse(t)).filter(t => t > t0 && t <= t1 + 1);
+  const events = Object.fromEntries(R.markets.map(m => [m.closeTime, m.event]));
+  settles.forEach((t, i) => { const name = meeting(events[new Date(t).toISOString().replace('.000Z', 'Z')] || ''); const right = x(t) > W - Rr - 220; g += `<line x1="${x(t)}" x2="${x(t)}" y1="${8 + i * 19}" y2="${H - B}" stroke="#56554f"/><text x="${x(t) + (right ? -8 : 8)}" y="${16 + i * 19}" text-anchor="${right ? 'end' : 'start'}" class="note">${esc(name)} contracts settle, ${esc(day(t).slice(0, -5))}</text>`; });
+  const end = curve.at(-1);
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Account value over time">${g}
+    <line x1="${L}" x2="${W - Rr}" y1="${y(strategy.startCash)}" y2="${y(strategy.startCash)}" stroke="#898781"/><text x="${L + 8}" y="${y(strategy.startCash) - 8}" class="note">Started with ${esc(money(strategy.startCash, 0))}</text>
+    <path d="${path}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="${x(end[0])}" cy="${y(end[1])}" r="5.5" fill="#3987e5" stroke="#1a1a19" stroke-width="2"/><text x="${x(end[0]) + 12}" y="${y(end[1]) + 5}" class="val num">${esc(money(end[1]))}</text>
+    <line id="eqCross" y1="${T}" y2="${H - B}" stroke="#c3c2b7" opacity="0"/><circle id="eqDot" r="5" fill="#fff" stroke="#1a1a19" stroke-width="2" opacity="0"/>
+    <rect x="${L}" y="${T}" width="${W - L - Rr}" height="${H - T - B}" fill="transparent" id="eqHit"/></svg>`;
+  const hit = $('#eqHit'), cross = $('#eqCross'), dot = $('#eqDot');
+  hit.addEventListener('pointermove', e => {
+    const r = hit.getBoundingClientRect(), t = t0 + (e.clientX - r.left) / r.width * (t1 - t0);
+    let a = 0, b = curve.length - 1; while (a < b) { const m = (a + b + 1) >> 1; if (curve[m][0] <= t) a = m; else b = m - 1; }
+    const p = curve[a]; cross.setAttribute('x1', x(t)); cross.setAttribute('x2', x(t)); cross.setAttribute('opacity', .5); dot.setAttribute('cx', x(t)); dot.setAttribute('cy', y(p[1])); dot.setAttribute('opacity', 1);
+    showTip(e, `<b class="num">${esc(money(p[1]))}</b><span>${esc(day(t))} · ${esc(signed(p[1] - strategy.startCash))} against the start</span>`);
+  });
+  hit.addEventListener('pointerleave', () => { cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip(); });
+}
+
+function drawBars() {
+  const box = $('#pnlBars'), W = box.clientWidth || 600, rowH = 18.4, gap = 20, L = 150, mid = L + (W - L - 12) * 0.46;
+  const rows = strategy.contracts, top = Math.max(1, ...rows.map(c => Math.abs(c.pnl)));
+  const half = Math.min(mid - L - 62, W - mid - 74);
+  let g = '', yy = 4, lastEvent = null;
+  for (const c of rows) {
+    if (c.event !== lastEvent) { yy += lastEvent ? gap - 6 : 0; g += `<text x="0" y="${yy + 13}" class="note">${esc(meeting(c.event))} meeting</text>`; yy += 20; lastEvent = c.event; }
+    const w = Math.abs(c.pnl) / top * half, up = c.pnl >= 0, x = up ? mid + 1 : mid - 1 - w, traded = c.fills > 0;
+    const label = traded ? signed(c.pnl) : 'no trades';
+    g += `<g class="bar-row" data-ticker="${esc(c.ticker)}" style="cursor:pointer"><rect x="0" y="${yy}" width="${W}" height="${rowH}" fill="transparent"/>
+      <text x="0" y="${yy + 14}" style="fill:#c3c2b7;font-size:14px">${esc(strike(c))}</text><text x="${L - 14}" y="${yy + 14}" text-anchor="end" style="font-size:11.5px;letter-spacing:.8px">${c.result ? esc(c.result.toUpperCase()) : ''}</text>
+      ${traded && w >= 0.5 ? `<path d="${up ? `M${mid + 1},${yy + 3}h${Math.max(0, w - 4)}a4,4 0 0 1 4,4v${rowH - 14}a4,4 0 0 1 -4,4h${-Math.max(0, w - 4)}z` : `M${mid - 1},${yy + 3}h${-Math.max(0, w - 4)}a4,4 0 0 0 -4,4v${rowH - 14}a4,4 0 0 0 4,4h${Math.max(0, w - 4)}z`}" fill="${up ? '#3987e5' : '#d95926'}"/>` : ''}
+      <text x="${up ? mid + w + 8 : mid - w - 8}" y="${yy + 14}" text-anchor="${up ? 'start' : 'end'}" class="${traded ? 'val' : ''} num" style="font-size:14px">${esc(label)}</text></g>`;
+    yy += rowH;
+  }
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${yy + 8}" height="${yy + 8}" role="img" aria-label="Profit or loss per contract"><line x1="${mid}" x2="${mid}" y1="20" y2="${yy + 4}" stroke="#56554f"/>${g}</svg>`;
+  box.querySelectorAll('.bar-row').forEach(row => {
+    const c = rows.find(r => r.ticker === row.dataset.ticker);
+    row.addEventListener('pointermove', e => showTip(e, `<b class="num">${esc(c.fills ? signed(c.pnl) : 'No trades')}</b><span>${esc(c.ticker)} · settled ${esc((c.result || 'unknown').toUpperCase())}${c.fills ? ` · bought ${count(c.bought)}, sold ${count(c.sold)}, fees ${money(c.feesPaid)}` : ''}</span>`));
+    row.addEventListener('pointerleave', hideTip);
+    row.addEventListener('click', () => { app.selectContract(c.ticker); app.setTab('trades'); });
+  });
+}
+
+// ---- Trades ----
+function renderContracts() {
+  const box = $('#contracts'); let html = `<h2>The ${R.data.contracts} contracts</h2><div class="sub" style="margin-bottom:6px">Each is a yes-or-no question about the Fed's rate.</div>`, last = null;
+  for (const c of strategy.contracts) {
+    const m = marketOf(c.ticker);
+    if (c.event !== last) { html += `<div class="group" style="margin-top:${last ? 8 : 0}px">${esc(meeting(c.event))} meeting. The rate came out at <b>${esc(m.expirationValue || '?')}</b></div>`; last = c.event; }
+    const what = c.fills ? `bought ${qty(c.bought)}${c.sold ? `, sold ${qty(c.sold)}` : ''}` : (c.orders.length ? 'orders never filled' : 'no signal');
+    html += `<div class="crow${contract === c.ticker ? ' on' : ''}" data-contract="${esc(c.ticker)}"><span>${esc(strike(c))}</span><span class="badge ${esc(c.result || '')}">${esc((c.result || '?').toUpperCase())}</span><span class="what">${esc(what)}</span><span class="pnl num">${c.fills ? esc(signed(c.pnl)) : '<span class="dim">—</span>'}</span></div>`;
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.crow').forEach(row => row.addEventListener('click', () => app.selectContract(row.dataset.contract)));
+}
+
+function renderContract() {
+  const c = strategy.contracts.find(r => r.ticker === contract), m = marketOf(contract);
+  $('#cTitle').textContent = `${c.ticker}`;
+  $('#cSub').textContent = m.title || '';
+  const cells = [
+    ['Settled', (c.result || '?').toUpperCase(), c.result ? `pays ${c.result === 'yes' ? '$1.00' : '$0.00'} a contract` : 'not settled yet'],
+    ['Bought', qty(c.bought), c.avgBuy == null ? 'nothing filled' : `average ${cents(c.avgBuy)}`],
+    ['Sold', qty(c.sold), c.avgSell == null ? (c.settlement.held > 0 ? `${qty(c.settlement.held)} held to the end` : 'nothing to sell') : `average ${cents(c.avgSell)}`],
+    ['Fees', money(c.feesPaid), `${count(c.fills)} fills`],
+    ['Result', c.fills ? signed(c.pnl) : '—', `on a ${money(R.cashPerContract, 0)} account`],
+  ];
+  $('#cCells').innerHTML = cells.map(([a, b, note]) => `<div class="cell"><span class="label">${esc(a)}</span><b class="num">${esc(b)}</b><small>${esc(note)}</small></div>`).join('');
+  $('#settleKey').innerHTML = c.result ? `<i style="width:10px;height:10px;border-radius:50%;background:#fff"></i>settled ${esc(c.result.toUpperCase())}` : '';
+  drawPrice(c, m);
+  const fmt = o => { const full = o.filled >= o.size - 1e-6; return full ? ['#3987e5', 'filled in full'] : o.filled > 0 ? ['#184f95', 'filled in part, rest pulled'] : ['#56554f', o.status === 'rejected' ? 'rejected' : 'never filled']; };
+  $('#ordersTable').innerHTML = `<tr><th class="label">Order placed (UTC)</th><th class="label">Side</th><th class="label r">Limit</th><th class="label r">Asked for</th><th class="label r">Filled</th><th class="label">What happened</th></tr>` +
+    (c.orders.length ? c.orders.map(o => { const [color, text] = fmt(o); return `<tr><td class="num">${esc(stampY(o.placedAt))}</td><td>${o.side === 'buy' ? 'Buy' : 'Sell'}</td><td class="r num">${esc(cents(o.price))}</td><td class="r num">${esc(o.size.toLocaleString('en-US', {maximumFractionDigits: 2}))}</td><td class="r num">${esc(o.filled.toLocaleString('en-US', {maximumFractionDigits: 2}))}</td><td><span class="state"><i style="background:${color}"></i>${esc(text)}</span></td></tr>`; }).join('') : `<tr><td colspan="6" class="dim">The price never met the rule on this contract, so no order was placed.</td></tr>`);
+}
+
+function drawPrice(c, m) {
+  const box = $('#priceChart'), W = box.clientWidth || 1200, H = 300, L = 58, Rr = 108, T = 14, B = 30;
+  const pts = m.series; if (!pts.length) { box.innerHTML = '<div class="dim" style="padding:40px 0">No candles.</div>'; return; }
+  const t0 = pts[0][0], t1 = Math.max(Date.parse(m.closeTime || 0) || 0, pts.at(-1)[0] + 3600e3);
+  const x = t => L + (t - t0) / Math.max(1, t1 - t0) * (W - L - Rr), y = p => T + (1 - p) * (H - T - B);
+  let g = '';
+  for (const p of [0, .2, .4, .6, .8, 1]) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(p)}" y2="${y(p)}" stroke="#2c2c2a"/><text x="${L - 10}" y="${y(p) + 5}" text-anchor="end" class="num">${p * 100}¢</text>`;
+  const span = t1 - t0, ticks = span > 70 * 864e5 ? monthTicks(t0, t1) : [];
+  for (const t of ticks) { const d = new Date(t); g += `<text x="${x(t)}" y="${H - 8}" text-anchor="middle">${MONTHS[d.getUTCMonth()]}</text><line x1="${x(t)}" x2="${x(t)}" y1="${H - B}" y2="${H - B + 5}" stroke="#383835"/>`; }
+  if (!ticks.length) g += `<text x="${L}" y="${H - 8}">${esc(day(t0))}</text><text x="${W - Rr}" y="${H - 8}" text-anchor="end">${esc(day(t1))}</text>`;
+  const lines = strategy.name === 'buy-the-dip' ? [[.4, 'buy at 40¢ or lower'], [.6, 'sell at 60¢ or higher']] : [[.85, 'buy at 85¢ or higher']];
+  for (const [p, text] of lines) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(p)}" y2="${y(p)}" stroke="#c41e3a" stroke-width="1.5"/><text x="${W - Rr + 8}" y="${y(p) + 5}" class="note" style="font-size:12.5px">${esc(text.replace(' or lower', '−').replace(' or higher', '+'))}</text>`;
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join('');
+  const dots = pts.length <= 260 ? pts.map(p => `<circle cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="2.4" fill="#c3c2b7"/>`).join('') : '';
+  const fills = new Map();
+  for (const f of strategy.fillRows) if (f.ticker === c.ticker) { const key = `${f.ts}|${f.side}`, a = fills.get(key) || {ts: f.ts, side: f.side, size: 0, cost: 0}; a.size += f.size; a.cost += f.size * f.price; fills.set(key, a); }
+  let marks = '';
+  [...fills.values()].forEach((f, i) => { const px = x(f.ts), py = y(f.cost / f.size), buy = f.side === 'buy'; marks += `<path class="fill-mark" data-i="${i}" d="${buy ? `M${px},${py - 7}l7,12h-14z` : `M${px},${py + 7}l7,-12h-14z`}" fill="${buy ? '#3987e5' : '#d95926'}" stroke="#1a1a19" stroke-width="1.5"/>`; });
+  const settle = c.result ? `<line x1="${x(t1)}" x2="${x(t1)}" y1="${T}" y2="${H - B}" stroke="#56554f"/><circle cx="${x(t1)}" cy="${y(c.result === 'yes' ? 1 : 0)}" r="6" fill="#fff" stroke="#1a1a19" stroke-width="2"/><text x="${x(t1) + 12}" y="${y(c.result === 'yes' ? 1 : 0) + (c.result === 'yes' ? 16 : -8)}" class="val">${c.result === 'yes' ? '$1' : '$0'}</text>` : '';
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Hourly closes and fills">${g}<path d="${path}" fill="none" stroke="#c3c2b7" stroke-width="${pts.length > 260 ? 1.4 : 1}" opacity="${pts.length > 260 ? 1 : .45}" stroke-linejoin="round"/>${dots}${settle}${marks}
+    <line id="pxCross" y1="${T}" y2="${H - B}" stroke="#c3c2b7" opacity="0"/><rect id="pxHit" x="${L}" y="${T}" width="${W - L - Rr}" height="${H - T - B}" fill="transparent"/></svg>`;
+  const hit = $('#pxHit'), cross = $('#pxCross'), list = [...fills.values()];
+  hit.addEventListener('pointermove', e => {
+    const r = hit.getBoundingClientRect(), t = t0 + (e.clientX - r.left) / r.width * (t1 - t0);
+    let best = pts[0]; for (const p of pts) if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p;
+    cross.setAttribute('x1', x(best[0])); cross.setAttribute('x2', x(best[0])); cross.setAttribute('opacity', .5);
+    const here = list.filter(f => f.ts === best[0] + 3600e3);
+    showTip(e, `<b class="num">${esc(cents(best[1]))}</b><span>${esc(stamp(best[0]))} UTC, ${esc(day(best[0]).slice(-4))} · ${esc(best[2].toLocaleString('en-US', {maximumFractionDigits: 2}))} contracts traded that hour${here.map(f => `<br>${f.side === 'buy' ? 'Bought' : 'Sold'} ${esc(f.size.toLocaleString('en-US', {maximumFractionDigits: 2}))} at ${esc(cents(f.cost / f.size))}`).join('')}</span>`);
+  });
+  hit.addEventListener('pointerleave', () => { cross.setAttribute('opacity', 0); hideTip(); });
+}
+
+// ---- The data ----
+function renderData() {
+  const d = R.data, tiles = [
+    ['Hourly candles', count(d.candlesUsable), `${count(d.candlesReturned)} returned, ${count(d.candlesReturned - d.candlesUsable)} dropped`],
+    ['Contracts', String(d.contracts), `${d.events.length} Fed meetings, 11 rate levels each`],
+    ['From first candle to last', `${Math.round(d.spanDays)} days`, `${day(d.firstCandle)} to ${day(d.lastCandle)}`],
+    ['Hours that have a candle', `${(d.shareOfHoursWithCandle * 100).toFixed(1)}%`, `${count(d.candlesUsable)} of ${count(d.contractHours)} contract-hours`],
+    ['Contracts traded, per the candles', count(d.volume), `Kalshi's own lifetime figure: ${count(d.lifetimeVolume)}`],
+  ];
+  $('#dataTiles').innerHTML = tiles.map(([a, b, c]) => `<div class="tile stat"><span class="label">${esc(a)}</span><b class="num">${esc(b)}</b><small>${esc(c)}</small></div>`).join('');
+  const months = Object.entries(d.byMonth), quiet = months.filter(([, n]) => n < 50), early = quiet.reduce((n, [, v]) => n + v, 0);
+  $('#covSub').textContent = quiet.length ? `Listed in August 2025, but the first ${quiet.length} months hold only ${early} candles between all 22 contracts.` : 'One row per contract. A tick is an hour in which it traded.';
+  drawCoverage();
+  const lab = d.labels, total = d.candlesReturned, order = [['source', 'official'], ['sourceType', 'true-candle'], ['quality', 'ok'], ['isTrueCandle', 'true']];
+  $('#labels').innerHTML = `<h2>The labels on every candle</h2><div class="sub">Where Predictefy says each candle came from. All ${count(total)} agree.</div>` +
+    order.map(([key, want]) => { const n = (lab[key] || {})[want] || 0, others = Object.entries(lab[key] || {}).filter(([v]) => v !== want); return `<div class="lrow"><span class="mono">${esc(key)}</span><div class="track"><i style="width:${n / total * 100}%"></i>${others.map(([, c]) => `<i class="derived" style="width:${c / total * 100}%"></i>`).join('')}</div><span class="num"><b>${esc(want)}</b> ${count(n)}${others.map(([v, c]) => `<br><span class="dim">${esc(v)} ${count(c)}</span>`).join('')}</span></div>`; }).join('') +
+    `<pre>${candleJson(d.sampleCandle)}</pre>`;
+  const live = R.liveCheck, box = $('#liveCheck');
+  if (!live) { box.innerHTML = `<h2>Contracts that are still open</h2><div class="sub">Run <span class="mono">python fetch.py --free</span> to compare the last 7 days of the open ${esc(meeting('KXFED-26OCT'))} contracts.</div>`; return; }
+  const empty = live.returned - live.usable, zero = live.zeroPricedLabelledTrue, other = empty - zero;
+  box.innerHTML = `<h2>Same request, contracts still open</h2><div class="sub">The last 7 days of the ${esc(meeting(live.events[0]))} contracts: ${count(live.returned)} candles came back.</div>
+    <div class="lrow" style="grid-template-columns:1fr"><div class="track" style="height:16px"><i class="off" style="width:${zero / live.returned * 100}%;height:16px"></i><i class="off" style="width:${other / live.returned * 100}%;height:16px;opacity:.6"></i><i class="derived" style="width:${live.usable / live.returned * 100}%;height:16px"></i></div></div>
+    <div style="font-size:15.5px;margin-top:8px"><b class="num">${count(zero)}</b> <span class="ink2">priced at zero with no volume, yet labelled official, true-candle, ok</span><br><b class="num">${count(other)}</b> <span class="ink2">more with no trades</span> · <b class="num">${count(live.usable)}</b> <span class="ink2">real ones, all trade-derived, isTrueCandle false</span></div>
+    <pre>${candleJson(live.sampleZero, true)}</pre>`;
+}
+function candleJson(c, flag) {
+  if (!c) return '';
+  const t = c.ts ?? c.timestamp, mark = (k, v) => flag && (k === 'close' || k === 'volume' || k === 'quality') ? `<em>${esc(v)}</em>` : `<b>${esc(v)}</b>`;
+  return `{ "timestamp": <b>${esc(t)}</b>, <span class="dim">// ${esc(stamp(t))} UTC</span>\n  "open": ${mark('open', c.open)}, "high": ${mark('high', c.high)}, "low": ${mark('low', c.low)}, "close": ${mark('close', c.close)}, "volume": ${mark('volume', c.volume)},\n  "source": <b>"${esc(c.source)}"</b>, "sourceType": <b>"${esc(c.sourceType)}"</b>, "quality": ${mark('quality', `"${c.quality}"`)}, "isTrueCandle": <b>${esc(c.isTrueCandle)}</b> }`;
+}
+function drawCoverage() {
+  const box = $('#coverage'), W = box.clientWidth || 1200, L = 132, Rr = 62, colH = 84, rowH = 14.6, d = R.data;
+  const t0 = Date.parse(R.markets[0].openTime || 0) || d.firstCandle, t1 = Math.max(...R.markets.map(m => Date.parse(m.closeTime || 0) || d.lastCandle));
+  const x = t => L + (t - t0) / (t1 - t0) * (W - L - Rr);
+  const months = Object.entries(d.byMonth), top = Math.max(...months.map(([, n]) => n));
+  let g = '';
+  for (const [key, n] of months) {
+    const [yr, mo] = key.split('-').map(Number), a = Math.max(t0, Date.UTC(yr, mo - 1, 1)), b = Math.min(t1, Date.UTC(yr, mo, 1)), w = Math.max(2, x(b) - x(a) - 4), h = Math.max(1.5, n / top * (colH - 30)), bw = Math.min(24, w), bx = x(a) + 2 + (w - bw) / 2;
+    g += `<path d="M${bx},${colH}v${-(h - Math.min(4, h))}a${Math.min(4, h)},${Math.min(4, h)} 0 0 1 ${Math.min(4, h)},${-Math.min(4, h)}h${bw - 2 * Math.min(4, h)}a${Math.min(4, h)},${Math.min(4, h)} 0 0 1 ${Math.min(4, h)},${Math.min(4, h)}v${h - Math.min(4, h)}z" fill="#3987e5"/><text x="${bx + bw / 2}" y="${colH - h - 7}" text-anchor="middle" class="val num" style="font-size:13.5px">${count(n)}</text>`;
+  }
+  g += `<line x1="${L}" x2="${W - Rr}" y1="${colH}" y2="${colH}" stroke="#383835"/><text x="0" y="${colH - 4}" class="note">candles a month</text>`;
+  let yy = colH + 14, last = null;
+  for (const m of R.markets) {
+    if (m.event !== last) { yy += last ? 8 : 0; last = m.event; }
+    g += `<text x="0" y="${yy + 11.5}" style="font-size:12.5px">${esc(meeting(m.event).slice(0, 3))} · ${esc(strike(m).toLowerCase())}</text><rect x="${L}" y="${yy + 1}" width="${x(Date.parse(m.closeTime || 0) || t1) - L}" height="${rowH - 3}" fill="#232321" rx="2"/>`;
+    let ticks = ''; for (const p of m.series) ticks += `M${x(p[0]).toFixed(1)},${yy + 1}v${rowH - 3}`;
+    g += `<path d="${ticks}" stroke="#3987e5" stroke-width="1.6"/><text x="${W - Rr + 8}" y="${yy + 11.5}" class="num" style="font-size:12.5px">${count(m.candles.usable)}</text>`;
+    yy += rowH;
+  }
+  for (const t of monthTicks(t0, t1)) { const dt = new Date(t); g += `<line x1="${x(t)}" x2="${x(t)}" y1="${colH}" y2="${yy + 4}" stroke="#2c2c2a"/><text x="${x(t) + (x(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 1)) - x(t)) / 2}" y="${yy + 20}" text-anchor="middle">${MONTHS[dt.getUTCMonth()]}${dt.getUTCMonth() === 0 ? ' ' + String(dt.getUTCFullYear()).slice(2) : ''}</text>`; }
+  g += `<text x="${L + 4}" y="${yy + 20}">Aug 25</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${yy + 28}" height="${yy + 28}" role="img" aria-label="Candle coverage per contract"><g id="covRows">${g}</g><rect id="covHit" x="${L}" y="${colH}" width="${W - L - Rr}" height="${yy - colH}" fill="transparent"/></svg>`;
+  $('#covHit').addEventListener('pointermove', e => { const r = e.currentTarget.getBoundingClientRect(), t = t0 + (e.clientX - r.left) / r.width * (t1 - t0), dt = new Date(t), key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}`; showTip(e, `<b class="num">${count(d.byMonth[key] || 0)} candles</b><span>${MONTHS[dt.getUTCMonth()]} ${dt.getUTCFullYear()}, all 22 contracts together</span>`); });
+  $('#covHit').addEventListener('pointerleave', hideTip);
+}
+
+// ---- What it assumes ----
+function renderAssume() {
+  const cards = [
+    ['No queue position', 'A resting order fills only when the price trades through it. A touch is not enough, because nobody knows where in the line it stood.'],
+    ['No price improvement', 'A resting order gets its own limit price, never a better one.'],
+    ['No market impact', 'An order never moves the price it trades against, so it may take at most a quarter of what an hour traded.'],
+    ['No latency', 'There is no delay between deciding and arriving. The order still cannot fill before the next candle.'],
+  ];
+  $('#assumeCards').innerHTML = cards.map(([a, b]) => `<div class="card"><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join('');
+  const o = strategy.orders, top = Math.max(1, o.placed), share = o.contractsAskedToBuy ? o.contractsBought / o.contractsAskedToBuy : 0;
+  $('#funnel').innerHTML = `<h2>What those rules did to this run</h2><div class="sub">${esc(strategy.label)}: ${count(o.placed)} orders went in. Where the answer was "we don't know", the model did not fill.</div>
+    <div class="frow"><span>Filled in full</span><div><div class="fbar" style="width:${o.filledInFull / top * 100}%"></div></div><b class="num">${o.filledInFull}</b></div>
+    <div class="frow"><span>Filled in part</span><div><div class="fbar part" style="width:${o.filledInPart / top * 100}%"></div></div><b class="num">${o.filledInPart}</b></div>
+    <div class="frow"><span>Never filled</span><div><div class="fbar none" style="width:${o.neverFilled / top * 100}%"></div></div><b class="num">${o.neverFilled}</b></div>
+    <div class="frow" style="margin-top:16px"><span>Contracts bought</span><div class="track" style="height:14px"><i style="width:${share * 100}%;height:14px"></i></div><b class="num">${Math.round(share * 100)}%</b></div>
+    <div class="sub" style="margin-top:6px">${count(o.contractsBought)} of the ${count(o.contractsAskedToBuy)} contracts the strategy asked to buy.</div>`;
+  $('#assumeList').innerHTML = strategy.assumptions.map(a => `<li>${esc(a)}</li>`).join('');
+  $('#addedList').innerHTML = [
+    'The engine stops at the last candle. Anything still held is settled here at the real result: $1 a contract for Yes, $0 for No, with no settlement fee.',
+    `Yes contracts only, ${money(R.cashPerContract, 0)} of cash per contract, ${count(R.lot)} contracts per order.`,
+    `These ${R.data.contracts} contracts are ${R.data.events.length} Fed decisions seen from 11 rate levels each. They move together, so this is a small sample.`,
+    'Candles with no volume, a price of zero, a "suspect" label or a book-derived price are dropped before the run and counted.',
+  ].map(a => `<li>${esc(a)}</li>`).join('');
+}
+
+// ---- What it costs ----
+function renderCost() {
+  const d = R.data, c = d.credits;
+  $('#costSub').textContent = `Pulled on ${day(Date.parse(d.fetchedAt))}. The candles are saved on disk, so running the backtest again costs nothing.`;
+  $('#costTable').innerHTML = `<tr><th class="label">Request</th><th class="label r">Calls</th><th class="label r">Credits each</th><th class="label r">Credits</th></tr>
+    <tr><td>List the contracts in an event<div class="mono dim">GET /api/kalshi/fetchMarkets</div></td><td class="r num">${c.catalogReads}</td><td class="r num">1</td><td class="r num">${c.catalogReads}</td></tr>
+    <tr><td>Hourly candles for one contract, up to 5,000 a call<div class="mono dim">GET /api/kalshi/fetchOHLCV</div></td><td class="r num">${c.historyReads}</td><td class="r num">5</td><td class="r num">${c.historyReads * 5}</td></tr>
+    <tr><td><b>The whole backtest</b></td><td class="r num"><b>${c.catalogReads + c.historyReads}</b></td><td></td><td class="r num"><b style="font-size:30px">${c.charged}</b></td></tr>
+    <tr><td>Run both strategies again from the saved candles</td><td class="r num">0</td><td></td><td class="r num">0</td></tr>`;
+  $('#costSrc').innerHTML = `<b>counted from</b> the x-credits-charged header on each response · <b>settlement results</b> Kalshi's public market record, no key`;
+  const inWindow = {Free: d.insideFreeWindow, Builder: d.candlesUsable - d.olderThanBuilderWindow, Pro: d.candlesUsable};
+  $('#plans').innerHTML = `<div class="plan head"><span class="label">Plan</span><span class="label">Price</span><span class="label">Credits a month</span><span class="label">History</span><span class="label">Of these ${count(d.candlesUsable)} candles</span></div>` +
+    R.plans.map(p => `<div class="plan${p.plan === 'Builder' ? ' you' : ''}" data-plan="${esc(p.plan)}"><b>${esc(p.plan)}</b><span>${esc(p.price)}</span><span class="num">${count(p.credits)}</span><span>${esc(p.history)}</span><span class="num"><b>${count(inWindow[p.plan] ?? 0)}</b> <span class="dim">${inWindow[p.plan] === d.candlesUsable ? 'all of them' : inWindow[p.plan] ? `all but ${count(d.candlesUsable - inWindow[p.plan])}` : 'they settled more than 7 days ago'}</span></span></div>`).join('');
+  $('#upgrade').href = R.upgradeUrl;
+  drawWindows(inWindow);
+}
+function drawWindows(inWindow) {
+  const box = $('#windows'), W = box.clientWidth || 1800, L = 150, Rr = 250, colH = 118, d = R.data;
+  const now = Date.parse(d.fetchedAt), t0 = Date.parse(R.markets[0].openTime || 0) || d.firstCandle, x = t => L + (t - t0) / (now - t0) * (W - L - Rr);
+  const months = Object.entries(d.byMonth), top = Math.max(...months.map(([, n]) => n));
+  $('#windowSub').textContent = `Columns are candles a month. The bars are what each plan could read on ${day(now)}.`;
+  let g = '';
+  for (const [key, n] of months) {
+    const [yr, mo] = key.split('-').map(Number), a = Math.max(t0, Date.UTC(yr, mo - 1, 1)), b = Math.min(now, Date.UTC(yr, mo, 1)), w = Math.max(2, x(b) - x(a) - 6), h = Math.max(2, n / top * (colH - 34)), bw = Math.min(24, w), bx = x(a) + 3 + (w - bw) / 2, r = Math.min(4, h);
+    g += `<path d="M${bx},${colH}v${-(h - r)}a${r},${r} 0 0 1 ${r},${-r}h${bw - 2 * r}a${r},${r} 0 0 1 ${r},${r}v${h - r}z" fill="#3987e5"/><text x="${bx + bw / 2}" y="${colH - h - 7}" text-anchor="middle" class="val num" style="font-size:14px">${count(n)}</text><text x="${bx + bw / 2}" y="${colH + 20}" text-anchor="middle">${MONTHS[mo - 1]}${mo === 1 || key === months[0][0] ? ' ' + String(yr).slice(2) : ''}</text>`;
+  }
+  g += `<line x1="${L}" x2="${W - Rr}" y1="${colH}" y2="${colH}" stroke="#383835"/><text x="0" y="${colH - 6}" class="note">candles a month</text><text x="${x(now)}" y="${colH + 20}" text-anchor="middle">Oct</text>`;
+  const rows = [['Free', now - 7 * 864e5, '7 days'], ['Builder', now - 365 * 864e5, '12 months'], ['Pro', t0, 'unlimited']];
+  rows.forEach(([plan, from, text], i) => {
+    const yy = colH + 40 + i * 34, a = Math.max(L, x(from)), w = Math.max(5, x(now) - a);
+    g += `<text x="0" y="${yy + 15}" class="val" style="font-size:17px">${esc(plan)}</text><text x="76" y="${yy + 15}" class="note">${esc(text)}</text><rect x="${L}" y="${yy + 3}" width="${W - L - Rr}" height="16" rx="4" fill="#232321"/><rect x="${a}" y="${yy + 3}" width="${w}" height="16" rx="4" fill="${plan === 'Builder' ? '#c41e3a' : '#898781'}"/><text x="${W - Rr + 14}" y="${yy + 16}" class="val num" style="font-size:16px">${count(inWindow[plan] ?? 0)} <tspan style="fill:#898781;font-weight:400">of ${count(d.candlesUsable)} candles</tspan></text>`;
+  });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${colH + 150}" height="${colH + 150}" role="img" aria-label="Plan history windows against candle counts">${g}</svg>`;
+}
+
+const renderers = {result: renderResult, trades: () => { renderContracts(); renderContract(); }, data: renderData, assume: renderAssume, cost: renderCost};
+const app = window.app = {
+  setTab(id) { state.tab = id; document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id)); document.querySelectorAll('main section').forEach(s => s.classList.toggle('on', s.id === `tab-${id}`)); hideTip(); renderers[id](); },
+  setStrategy(name) { strategy = R.strategies.find(s => s.name === name) || R.strategies[0]; document.querySelectorAll('#strategies button').forEach(b => b.classList.toggle('on', b.dataset.strategy === strategy.name)); $('#rule').textContent = strategy.rule; renderers[state.tab](); },
+  selectContract(ticker) { contract = ticker; if (state.tab === 'trades') { renderContracts(); renderContract(); } },
+};
+
+fetch('/api/results').then(r => r.json()).then(body => {
+  if (body.missing) {
+    const box = $('#empty'); box.hidden = false;
+    box.innerHTML = body.planRequired
+      ? `<h2>This history needs a bigger plan</h2><p class="ink2">Predictefy answered <span class="mono">${esc(body.planRequired.status)} ${esc(body.planRequired.code)}</span>. The free plan reads 7 days of price history, Builder reads 12 months and Pro reads all of it.</p><a class="btn" href="${esc(body.upgradeUrl)}" target="_blank" rel="noopener">See Predictefy plans</a><p class="dim">Or try the pipeline on the free plan: <code>python fetch.py --free</code></p>`
+      : `<h2>No results yet</h2><p class="ink2">Run <code>python fetch.py</code> to pull the candles, then <code>python backtest.py</code>, and reload this page.</p>`;
+    return;
+  }
+  R = body; $('#app').hidden = false;
+  $('#pillData').innerHTML = `<i></i><span>Candles: <b>Predictefy</b> fetchOHLCV · pulled ${esc(day(Date.parse(R.data.fetchedAt)))}</span>`;
+  $('#strategies').innerHTML = R.strategies.map(s => `<button data-strategy="${esc(s.name)}">${esc(s.label)}</button>`).join('');
+  document.querySelectorAll('#strategies button').forEach(b => b.addEventListener('click', () => app.setStrategy(b.dataset.strategy)));
+  document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => app.setTab(b.dataset.tab)));
+  const best = [...R.strategies[0].contracts].sort((a, b) => b.pnl - a.pnl)[0];
+  contract = best ? best.ticker : R.markets[0].ticker;
+  app.setStrategy(R.strategies[0].name);
+  document.body.dataset.ready = '1';
+});
+addEventListener('resize', () => { if (R) renderers[state.tab](); });
+</script>
+</body>
+</html>
