@@ -27,8 +27,8 @@ CREDITS_PER_HISTORY_READ = 5
 
 PLANS = (
     {"plan": "Free", "price": "$0", "credits": 25_000, "history": "7 days"},
-    {"plan": "Builder", "price": "$48.88 a month", "credits": 500_000, "history": "12 months"},
-    {"plan": "Pro", "price": "$149 a month", "credits": 5_000_000, "history": "unlimited"},
+    {"plan": "Builder", "price": "$48.88 a month", "credits": 250_000, "history": "12 months"},
+    {"plan": "Pro", "price": "$149 a month", "credits": 2_000_000, "history": "unlimited"},
 )
 UPGRADE_URL = (
     "https://predictefy.com/en/api?utm_source=youtube&utm_medium=video"
