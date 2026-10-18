@@ -43,3 +43,13 @@ ALSO
 - peek.py prints one raw candle and the label counts for a settled contract, or with --open the last 7 days of an open one, including one zero-priced candle.
 - Unit tests: the candle checks (including the zero-priced candle labelled ok), coverage and gaps, the replay row parses in predictefy.backtest, both rules on synthetic candles, an order never fills on the candle that caused it, a thin candle fills only part of an order, Kalshi's fee for 100 contracts at 45 cents is $1.74, settlement for yes, no and unsettled, the combined curve, paging past 5,000 candles, and the plan-required message.
 - README with quick start, which plan is needed, what it costs to run, the two rules, the assumptions and a plain list of what the backtest cannot tell you.
+Reference documentation for this build:
+- Predictefy API: https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=build-prompt
+- Python SDK: https://docs.predictefy.com/guides/python-sdk/
+- Backtester and fill model: https://docs.predictefy.com/guides/cookbook/backtest-on-candles/
+- Historical data and candle provenance: https://docs.predictefy.com/guides/history/
+- Market catalog endpoint: https://docs.predictefy.com/api/operations/fetchmarkets/
+- Historical OHLCV endpoint: https://docs.predictefy.com/api/operations/fetchohlcv/
+- API key setup: https://docs.predictefy.com/quickstart/
+- Credits and history-window rules: https://docs.predictefy.com/guides/credits/
+Use these as technical references; the repository pins predictefy==1.0.0b9. Check compatibility before changing the SDK version. Never copy a real API key into generated code.
