@@ -31,7 +31,7 @@ PLANS = (
     {"plan": "Pro", "price": "$149 a month", "credits": 2_000_000, "history": "unlimited"},
 )
 UPGRADE_URL = (
-    "https://predictefy.com/en/api?utm_source=youtube&utm_medium=video"
+    "https://predictefy.com/en/prediction-market-api?utm_source=youtube&utm_medium=video"
     "&utm_campaign=kalshi-backtest&utm_content=upgrade"
 )
 KEYS_URL = "https://portal.predictefy.com/keys"

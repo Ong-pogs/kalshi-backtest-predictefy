@@ -1,6 +1,6 @@
 # Using the Predictefy API and Python SDK for Kalshi backtests
 
-This guide connects the code in this repository to the official [Predictefy API](https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=sdk-guide) and [Python SDK](https://docs.predictefy.com/guides/python-sdk/). The client reads market data; the backtest then runs locally from saved candles. It does not submit trades.
+This guide connects the code in this repository to the official [Predictefy API](https://predictefy.com/en/prediction-market-api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=sdk-guide) and [Python SDK](https://docs.predictefy.com/guides/python-sdk/). The client reads market data; the backtest then runs locally from saved candles. It does not submit trades.
 
 ## Install and authenticate
 
@@ -38,4 +38,4 @@ Save the response and its collection time before calculating results. Keep missi
 
 ## Other clients
 
-This repository uses Python. If your application is in TypeScript, start with the official [Predictefy TypeScript SDK](https://docs.predictefy.com/guides/sdk/) and [API reference](https://docs.predictefy.com/api/) instead. The [API overview](https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=sdk-guide-footer) covers the wider product.
+This repository uses Python. If your application is in TypeScript, start with the official [Predictefy TypeScript SDK](https://docs.predictefy.com/guides/sdk/) and [API reference](https://docs.predictefy.com/api/) instead. The [API overview](https://predictefy.com/en/prediction-market-api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=sdk-guide-footer) covers the wider product.

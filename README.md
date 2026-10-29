@@ -1,6 +1,6 @@
 # Kalshi Backtesting with the Predictefy API and Python SDK
 
-A small, honest backtest for Kalshi. It pulls real hourly price history through the [Predictefy API](https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=github), replays a simple strategy over it with the backtester that ships in Predictefy's Python package, settles what is left at the real result, and shows everything on a local results page: the account value over time, every order, the fees, and where the data is thin.
+A small, honest backtest for Kalshi. It pulls real hourly price history through the [Predictefy API](https://predictefy.com/en/prediction-market-api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=github), replays a simple strategy over it with the backtester that ships in Predictefy's Python package, settles what is left at the real result, and shows everything on a local results page: the account value over time, every order, the fees, and where the data is thin.
 
 Use this example to learn the [Predictefy Python SDK](https://docs.predictefy.com/guides/python-sdk/), the [historical candle API](https://docs.predictefy.com/api/operations/fetchohlcv/) and the [candle backtesting workflow](https://docs.predictefy.com/guides/cookbook/backtest-on-candles/). The [API and SDK guide](docs/api-and-sdk.md) maps the Python calls to their REST endpoints and explains which parts run offline.
 
@@ -130,7 +130,7 @@ The GitHub Actions workflow runs the tests on Windows, macOS and Linux with Pyth
 
 | Resource | Use it for |
 |---|---|
-| [Predictefy prediction market API](https://predictefy.com/en/api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=resources) | Product overview and getting access to the API |
+| [Predictefy prediction market API](https://predictefy.com/en/prediction-market-api?utm_source=github&utm_medium=repo&utm_campaign=kalshi-backtest&utm_content=resources) | Product overview and getting access to the API |
 | [Predictefy documentation](https://docs.predictefy.com/) | Guides, SDKs and endpoint reference |
 | [API quickstart](https://docs.predictefy.com/quickstart/) | Your first authenticated request |
 | [Create a Predictefy API key](https://portal.predictefy.com/keys) | The key used by this project's fetcher |
